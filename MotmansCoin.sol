@@ -1,26 +1,65 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.6.0;
 
 //SafeMath
-contract SafeMath {
-    function safeAdd(uint a, uint b) public pure returns (uint c) {
-        c = a + b;
-        require(c >= a);
+library SafeMath {
+
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+
+        return c;
     }
-    function safeSub(uint a, uint b) public pure returns (uint c) {
-        require(b <= a);
-        c = a - b;
+
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return sub(a, b, "SafeMath: subtraction overflow");
     }
-    function safeMul(uint a, uint b) public pure returns (uint c) {
-        c = a * b;
-        require(a == 0 || c / a == b);
+
+
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
+
+        return c;
     }
-    function safeDiv(uint a, uint b) public pure returns (uint c) {
-        require(b > 0);
-        c = a / b;
+
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
+    }
+
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
+
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0, errorMessage);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
+    }
+
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return mod(a, b, "SafeMath: modulo by zero");
+    }
+
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b != 0, errorMessage);
+        return a % b;
     }
 }
 
-// ERC Token Standard #20 Interface
+//Erc20 interface contract
 contract ERC20Interface {
     function totalSupply() public constant returns (uint);
     function balanceOf(address tokenOwner) public constant returns (uint balance);
@@ -33,36 +72,66 @@ contract ERC20Interface {
     event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
 }
 
+//MotmansCoin contract
+contract MotmansCoin is ERC20Interface, SafeMath{
+    string public symbol;
+    string public  name;
+    uint8 public decimals;
 
-// Owned contract
-contract Owned {
-    address public owner;
-    address public newOwner;
+    uint256 private _totalSupply;
 
-    event OwnershipTransferred(address indexed _from, address indexed _to);
+    mapping(address => uint256) private balances;
+    mapping(address => mapping(address => uint256)) private allowed;
 
+    //Contructor
     constructor() public {
-        owner = msg.sender;
+        symbol = "MOT";
+        name = "MotmansCoin";
+        decimals = 18;
+        _totalSupply = 21000000;
+        balances[0xA754b25842d6ad4c11043fe615DC57c7Dcbd0D36] = _totalSupply;
+        emit Transfer(address(0), 0xA754b25842d6ad4c11043fe615DC57c7Dcbd0D36, _totalSupply);
     }
 
-    modifier onlyOwner {
-        require(msg.sender == owner);
-        _;
+    //function to get total supply
+    function totalSupply() public view returns (uint) {
+        return _totalSupply;
     }
 
-    function transferOwnership(address _newOwner) public onlyOwner {
-        newOwner = _newOwner;
+    //function to get total supply with burnt tokens taken in account
+    function realTotalSupply() public view return (uint) {
+    return _totalSupply - balances[address[0]];
     }
-    function acceptOwnership() public {
-        require(msg.sender == newOwner);
-        emit OwnershipTransferred(owner, newOwner);
-        owner = newOwner;
-        newOwner = address(0);
+
+    //get the token balance of a certain user
+    function balanceOf(address tokenOwner) public view returns (uint balance) {
+            return balances[tokenOwner];
     }
-}
 
+    //transfer function
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        _transfer(msg.sender, recipient, amount);
+        return true;
+    }
 
-Contract MotmansCoin is Owned, ERC20Interface, SafeMath
-{
+    //allowance function
+    function allowance(address owner, address spender) public view returns (uint256) {
+        return _allowances[owner][spender];
+    }
+
+    //approve function
+    function approve(address spender, uint256 amount) public returns (bool) {
+        _approve(msg.sender, spender, amount);
+        return true;
+    }
+
+    //transferFrom function
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        _transfer(sender, recipient, amount);
+        _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        return true;
+    }
+
+    
 
 }
