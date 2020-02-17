@@ -80,8 +80,8 @@ contract MotmansCoin is ERC20Interface, SafeMath{
 
     uint256 private _totalSupply;
 
-    mapping(address => uint256) private balances;
-    mapping(address => mapping(address => uint256)) private allowed;
+    mapping(address => uint256) private _balances;
+    mapping(address => mapping(address => uint256)) private _allowances;
 
     //Contructor
     constructor() public {
@@ -94,18 +94,13 @@ contract MotmansCoin is ERC20Interface, SafeMath{
     }
 
     //function to get total supply
-    function totalSupply() public view returns (uint) {
+    function totalSupply() public view returns (uint256) {
         return _totalSupply;
     }
 
-    //function to get total supply with burnt tokens taken in account
-    function realTotalSupply() public view return (uint) {
-    return _totalSupply - balances[address[0]];
-    }
-
     //get the token balance of a certain user
-    function balanceOf(address tokenOwner) public view returns (uint balance) {
-            return balances[tokenOwner];
+    function balanceOf(address tokenOwner) public view returns (uint256 balance) {
+            return _balances[tokenOwner];
     }
 
     //transfer function
@@ -132,6 +127,39 @@ contract MotmansCoin is ERC20Interface, SafeMath{
         return true;
     }
 
-    
+    //increase allowances
+    function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
+        _approve(msg.sender, spender, _allowances[msg.sender][spender].add(addedValue));
+        return true;
+    }
 
+    //decrease allowance
+    function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
+        _approve(msg.sender, spender, _allowances[msg.sender][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        return true;
+    }
+
+    //internal transfer function
+    function _transfer(address sender, address recipient, uint256 amount) internal {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _balances[recipient] = _balances[recipient].add(amount);
+        emit Transfer(sender, recipient, amount);
+    }
+
+    //internal approve function
+    function _approve(address owner, address spender, uint256 amount) internal virtual {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
+    }
+
+    //Ether send to this contract is reverted
+    function () public payable {
+            revert();
+    }
 }
