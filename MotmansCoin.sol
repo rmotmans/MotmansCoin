@@ -60,20 +60,23 @@ library SafeMath {
 }
 
 //Erc20 interface contract
-contract ERC20Interface {
-    function totalSupply() public constant returns (uint);
-    function balanceOf(address tokenOwner) public constant returns (uint balance);
-    function allowance(address tokenOwner, address spender) public constant returns (uint remaining);
-    function transfer(address to, uint tokens) public returns (bool success);
-    function approve(address spender, uint tokens) public returns (bool success);
-    function transferFrom(address from, address to, uint tokens) public returns (bool success);
+interface ERC20Interface {
+    function totalSupply() view external returns (uint);
+    function balanceOf(address tokenOwner) view external returns (uint balance);
+    function allowance(address tokenOwner, address spender) view external returns (uint remaining);
+    function transfer(address to, uint256 tokens) external returns (bool success);
+    function approve(address spender, uint256 tokens) external returns (bool success);
+    function transferFrom(address from, address to, uint256 tokens) external returns (bool success);
 
     event Transfer(address indexed from, address indexed to, uint tokens);
     event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
 }
 
 //MotmansCoin contract
-contract MotmansCoin is ERC20Interface, SafeMath{
+contract MotmansCoin is ERC20Interface{
+
+    using SafeMath for uint;
+
     string public symbol;
     string public  name;
     uint8 public decimals;
@@ -87,41 +90,41 @@ contract MotmansCoin is ERC20Interface, SafeMath{
     constructor() public {
         symbol = "MOT";
         name = "MotmansCoin";
-        decimals = 18;
-        _totalSupply = 21000000;
-        balances[0xA754b25842d6ad4c11043fe615DC57c7Dcbd0D36] = _totalSupply;
+        decimals = 10;
+        _totalSupply = 210000000000000000;
+        _balances[0xA754b25842d6ad4c11043fe615DC57c7Dcbd0D36] = _totalSupply;
         emit Transfer(address(0), 0xA754b25842d6ad4c11043fe615DC57c7Dcbd0D36, _totalSupply);
     }
 
     //function to get total supply
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _totalSupply;
     }
 
     //get the token balance of a certain user
-    function balanceOf(address tokenOwner) public view returns (uint256 balance) {
+    function balanceOf(address tokenOwner) public view override returns (uint256 balance) {
             return _balances[tokenOwner];
     }
 
     //transfer function
-    function transfer(address recipient, uint256 amount) public returns (bool) {
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
         _transfer(msg.sender, recipient, amount);
         return true;
     }
 
     //allowance function
-    function allowance(address owner, address spender) public view returns (uint256) {
+    function allowance(address owner, address spender) public view override returns (uint256) {
         return _allowances[owner][spender];
     }
 
     //approve function
-    function approve(address spender, uint256 amount) public returns (bool) {
+    function approve(address spender, uint256 amount) public override returns (bool) {
         _approve(msg.sender, spender, amount);
         return true;
     }
 
     //transferFrom function
-    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
         _transfer(sender, recipient, amount);
         _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
@@ -159,7 +162,7 @@ contract MotmansCoin is ERC20Interface, SafeMath{
     }
 
     //Ether send to this contract is reverted
-    function () public payable {
-            revert();
+    fallback() external{
+        revert();
     }
 }
